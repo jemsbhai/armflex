@@ -2,7 +2,7 @@
 edge devices.
 
 The core is dependency-free. Modules arrive by extraction from
-wattwarden: toml_model (landed), calibrate and phone_energy (pending).
+wattwarden: toml_model and calibrate (landed), phone_energy (pending).
 """
 
 from armflex.toml_model import (

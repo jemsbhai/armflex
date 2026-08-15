@@ -8,6 +8,12 @@ versioning.
 
 ### Added
 
+- calibrate extracted from wattwarden: closed-form least squares
+  (linfit), the per-thread and per-quant decode time-structure fits
+  from EXP-003a, sweep loading, markdown rendering, and the
+  append-only output guard. Seven tests migrated with it; the
+  artifact-backed test skips here because the EXP-002 artifacts stay
+  in the wattwarden repository.
 - toml_model extracted from wattwarden: ModelSpec architecture math,
   ArmCpuProfile energy constants, TomlEstimate with derivation and
   stated assumptions, prefill and decode operation counts, and the
