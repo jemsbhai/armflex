@@ -59,6 +59,21 @@ def test_longer_prompt_makes_each_decoded_token_dearer():
     assert far > near
 
 
+def test_tensor_g3_profile_is_calibrated_and_scoped():
+    from armflex.toml_model import PROFILES, TENSOR_G3
+
+    assert PROFILES["tensor-g3"] is TENSOR_G3
+    assert TENSOR_G3.calibrated is True
+    assert "EXP-003b" in TENSOR_G3.provenance
+    estimate = estimate_energy(QWEN25_1_5B, TENSOR_G3, "Q4_0", 64, 512)
+    assert estimate.total_j > 0
+    # calibrated profile: no uncalibrated warning in the assumptions
+    assert not any("UNCALIBRATED" in a for a in estimate.assumptions)
+    # only measured quants exist; anything else must raise, not guess
+    with pytest.raises(KeyError):
+        estimate_energy(QWEN25_1_5B, TENSOR_G3, "Q4_K_M", 64, 512)
+
+
 def test_estimate_is_labeled_predicted_and_flags_uncalibrated():
     est = estimate_energy(QWEN25_1_5B, NEOVERSE_N1, "Q4_0", 128, 128)
     assert est.label == "predicted"

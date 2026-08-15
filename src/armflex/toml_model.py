@@ -7,9 +7,10 @@ downstream in wattwarden's meter.py.
 Method: count multiply-accumulate operations and DRAM traffic for prefill
 and decode phases of decoder-only transformer inference, then price them
 with per-operation energy constants from an ArmCpuProfile. Estimates are
-predictions, always labeled as such. Profiles ship uncalibrated; EXP-002
-fits the constants and flips the calibrated flag. Uncalibrated numbers are
-for relative comparison and admission control only, never for reporting.
+predictions, always labeled as such. Profiles ship uncalibrated until a
+fitting experiment (the EXP-003 series) flips the calibrated flag with
+measured constants. Uncalibrated numbers are for relative comparison and
+admission control only, never for reporting.
 
 Stated modeling assumptions (also surfaced in every estimate):
 - Weight MACs per token equal the matmul parameter count (one MAC per
@@ -98,8 +99,8 @@ class ArmCpuProfile:
     """Per-operation energy constants for one Arm CPU target.
 
     All energy constants are picojoules. calibrated=False means the values
-    are placeholders pending fitting (EXP-002) and must never be reported
-    as results.
+    are placeholders pending a fitting experiment (EXP-003 series) and must
+    never be reported as results.
     """
 
     name: str
@@ -209,8 +210,8 @@ def estimate_energy(
     if not profile.calibrated:
         assumptions.append(
             f"profile {profile.name!r} is UNCALIBRATED: constants are "
-            "placeholders pending EXP-002; use for relative comparison and "
-            "admission control only"
+            "placeholders pending an EXP-003 series fit; use for relative "
+            "comparison and admission control only"
         )
     if duration_s is None:
         assumptions.append("no duration supplied: static energy excluded")
@@ -314,7 +315,30 @@ NEOVERSE_V2 = ArmCpuProfile(
     provenance="placeholder pending EXP-00x fit on a V2 instance; do not report",
 )
 
+# The first calibrated profile: fitted from on-device battery telemetry,
+# EXP-003b (2026-08-15), Google Pixel 8 Pro (Tensor G3: 1x Cortex-X3,
+# 4x A715, 4x A510), Android 16, Termux. Two-parameter least squares over
+# five cells (Q4_0 x t{1,4,8}, Q8_0 x t{4,8}); the single MAC coefficient
+# is shared by design (MACs identical across cells), so only the measured
+# quants are listed; other quants raise, which is the honest behavior.
+# System-level effective constants: they fold cache, fabric, and DRAM
+# controller activity into per-op prices; static power is folded into the
+# per-op constants by the fit design (the explicit three-parameter static
+# term came out negative and was rejected as overfit).
+TENSOR_G3 = ArmCpuProfile(
+    name="tensor-g3",
+    e_mac_pj={"Q4_0": 84.6, "Q8_0": 84.6},
+    e_dram_pj_per_byte=88.3,
+    p_static_w=0.0,
+    calibrated=True,
+    provenance=(
+        "EXP-003b fit, Pixel 8 Pro battery telemetry, 2026-08-15; "
+        "see wattwarden LOGBOOK.md for scope and limitations"
+    ),
+)
+
 PROFILES: dict[str, ArmCpuProfile] = {
     NEOVERSE_N1.name: NEOVERSE_N1,
     NEOVERSE_V2.name: NEOVERSE_V2,
+    TENSOR_G3.name: TENSOR_G3,
 }

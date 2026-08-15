@@ -40,16 +40,36 @@ def test_power_sign_rule_matches_calibration_paste():
 
 def test_trapezoid_integration_exact_on_constant_power():
     samples = [_sample(t * 1000, _watts_to_ua(4.0)) for t in range(11)]
-    joules, n, charging = integrate_energy_j(samples, 0, 10_000)
+    joules, n, charging, covered = integrate_energy_j(samples, 0, 10_000)
     assert joules == pytest.approx(40.0)
     assert n == 11
     assert charging == 0
+    assert covered == pytest.approx(1.0)
+
+
+def test_boundary_extension_recovers_full_window_energy():
+    # 3 samples at 5, 10, 15 s inside a 0..20 s window at constant 4 W:
+    # interior trapezoid alone would report 40 J; the true window energy
+    # is 80 J. Boundary extension must recover it.
+    samples = [_sample(t * 1000, _watts_to_ua(4.0)) for t in (5, 10, 15)]
+    joules, n, _, covered = integrate_energy_j(samples, 0, 20_000)
+    assert joules == pytest.approx(80.0)
+    assert n == 3
+    assert covered == pytest.approx(0.5)
+
+
+def test_single_sample_window_degrades_to_mean_power():
+    samples = [_sample(7_000, _watts_to_ua(3.0))]
+    joules, n, _, covered = integrate_energy_j(samples, 0, 10_000)
+    assert joules == pytest.approx(30.0)
+    assert n == 1
+    assert covered == 0.0
 
 
 def test_charging_samples_are_counted_not_hidden():
     samples = [_sample(t * 1000, _watts_to_ua(2.0)) for t in range(5)]
     samples[2] = _sample(2000, +500_000, status="CHARGING")
-    _, _, charging = integrate_energy_j(samples, 0, 4000)
+    _, _, charging, _ = integrate_energy_j(samples, 0, 4000)
     assert charging == 1
 
 
@@ -103,6 +123,8 @@ def test_baseline_netting_tokens_and_bench_time(tmp_path):
     assert cell["n"] == 1
     assert cell["threads"] == 1
     assert cell["flags"] == []
+    assert cell["min_rep_samples"] == 11
+    assert cell["mean_coverage"] == pytest.approx(1.0)
     assert cell["s_per_token_bench"] == pytest.approx(1.0 / 3.0)
     assert analysis["cells"]["Q8_0_t4"]["bytes_per_token"] > cell["bytes_per_token"]
 

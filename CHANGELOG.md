@@ -8,6 +8,17 @@ versioning.
 
 ### Added
 
+- Synced with wattwarden after EXP-003b completion: toml_model gains
+  the first calibrated profile, tensor-g3 (84.6 pJ/MAC, 88.3 pJ/byte,
+  fitted from Pixel 8 Pro battery telemetry; unmeasured quants raise
+  rather than guess), plus EXP-003-series wording in the honesty
+  docstrings. phone_energy carries the coverage-audit correction:
+  boundary-extended window integration with a covered-fraction
+  return, single-sample degradation to mean power, sparse-window
+  flags, per-cell sample and coverage reporting, and BOM-tolerant CSV
+  loading. Three tests joined the suites (tensor-g3 scope, boundary
+  extension, single-sample behavior); constants verified against the
+  exp_003b_phone_v2 analysis artifacts before porting.
 - Paper skeletons under papers/: southeastcon-core (IEEEtran) and
   flairs40-full (provisional article class pending the FLAIRS-40
   author kit). Each has main.tex, a seed references.bib with no

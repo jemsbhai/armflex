@@ -6,9 +6,9 @@ Android 16, termux-api, 2026-08-14, while PLUGGED_AC):
   +1,547,187 uA on AC). Discharge is therefore negative, and battery
   power draw in watts is P = -(I_uA * V_mV) * 1e-9.
 - api_voltage_mV is millivolts; api_temp_C is Celsius.
-- charge_counter is microamp-hours; its delta times mean voltage gives
-  an independent energy estimate used as a cross-check (not yet wired;
-  the sampler records enough to add it in analysis revisions).
+- charge_counter is microamp-hours in the API JSON, but the sampler
+  does NOT log it, so no coulomb-counter cross-check is possible for
+  this dataset; recording it is a named sampler improvement.
 - The sysfs columns are permission-denied on this device and ignored.
 
 Method (pre-registered, LOGBOOK EXP-003b, amended before execution):
@@ -38,7 +38,7 @@ _AVG_CTX = 256
 
 def load_samples(path: Path) -> list[dict[str, Any]]:
     rows: list[dict[str, Any]] = []
-    lines = path.read_text(encoding="utf-8").splitlines()
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
     header = lines[0].split(",")
     for line in lines[1:]:
         if not line.strip():
@@ -62,7 +62,7 @@ def load_samples(path: Path) -> list[dict[str, Any]]:
 
 def load_events(path: Path) -> list[dict[str, Any]]:
     events: list[dict[str, Any]] = []
-    lines = path.read_text(encoding="utf-8").splitlines()
+    lines = path.read_text(encoding="utf-8-sig").splitlines()
     for line in lines[1:]:
         if not line.strip():
             continue
@@ -87,12 +87,20 @@ def power_w(sample: dict[str, Any]) -> float | None:
 
 def integrate_energy_j(
     samples: list[dict[str, Any]], start_ms: int, end_ms: int
-) -> tuple[float, int, int]:
-    """Trapezoid integral of power over the window.
+) -> tuple[float, int, int, float]:
+    """Energy over the window with boundary extension.
 
-    Returns (joules, n_samples, n_charging_samples). Charging samples
-    inside a measurement window indicate a protocol violation and are
-    counted, never hidden.
+    Trapezoid over interior samples, plus rectangle extension of the
+    first and last sample powers out to the window edges: without the
+    extension, sparse windows lose their edge seconds of gross energy
+    while baseline subtraction charges the full duration (the v1
+    undercount found by the coverage audit). A single-sample window
+    degrades to mean power times duration.
+
+    Returns (joules, n_samples, n_charging_samples, covered_fraction)
+    where covered_fraction is the interior span over the window
+    duration. Charging samples inside a measurement window indicate a
+    protocol violation and are counted, never hidden.
     """
     window = [
         s
@@ -100,13 +108,19 @@ def integrate_energy_j(
         if start_ms <= s["t_ms"] <= end_ms and power_w(s) is not None
     ]
     charging = sum(1 for s in window if (s["i_ua"] or 0) > 0)
-    if len(window) < 2:
-        return 0.0, len(window), charging
+    duration_s = (end_ms - start_ms) / 1000.0
+    if not window or duration_s <= 0:
+        return 0.0, len(window), charging, 0.0
+    if len(window) == 1:
+        return power_w(window[0]) * duration_s, 1, charging, 0.0
     joules = 0.0
     for a, b in zip(window, window[1:]):
         dt = (b["t_ms"] - a["t_ms"]) / 1000.0
         joules += dt * (power_w(a) + power_w(b)) / 2.0
-    return joules, len(window), charging
+    joules += power_w(window[0]) * (window[0]["t_ms"] - start_ms) / 1000.0
+    joules += power_w(window[-1]) * (end_ms - window[-1]["t_ms"]) / 1000.0
+    covered = (window[-1]["t_ms"] - window[0]["t_ms"]) / 1000.0 / duration_s
+    return joules, len(window), charging, covered
 
 
 def baseline_power_w(samples, events) -> float:
@@ -115,7 +129,7 @@ def baseline_power_w(samples, events) -> float:
     for event in events:
         if event["phase"] != "baseline":
             continue
-        joules, n, _ = integrate_energy_j(samples, event["start_ms"], event["end_ms"])
+        joules, n, _, _ = integrate_energy_j(samples, event["start_ms"], event["end_ms"])
         if n >= 2:
             total_j += joules
             total_s += (event["end_ms"] - event["start_ms"]) / 1000.0
@@ -142,19 +156,23 @@ def analyze_cells(samples, events, bench_dir: Path) -> dict[str, Any]:
         if not event["phase"].startswith("cell_"):
             continue
         key = event["phase"][len("cell_"):]
-        joules, _n, charging = integrate_energy_j(
+        joules, n_samples, charging, covered = integrate_energy_j(
             samples, event["start_ms"], event["end_ms"]
         )
         duration_s = (event["end_ms"] - event["start_ms"]) / 1000.0
         rep = accum.setdefault(
             key,
             {"net_j": [], "duration_s": [], "flags": [], "model_size": 0,
-             "s_per_token": 0.0},
+             "s_per_token": 0.0, "samples": [], "covered": []},
         )
         rep["net_j"].append(joules - base_w * duration_s)
         rep["duration_s"].append(duration_s)
+        rep["samples"].append(n_samples)
+        rep["covered"].append(covered)
         if charging:
             rep["flags"].append(f"{charging} charging samples in a window")
+        if n_samples < 5:
+            rep["flags"].append(f"sparse window: {n_samples} samples")
         quant, threads = key.rsplit("_t", 1)
         if not rep["model_size"]:
             bench_files = sorted(bench_dir.glob(f"{quant}_t{threads}_rep*.json"))
@@ -188,6 +206,8 @@ def analyze_cells(samples, events, bench_dir: Path) -> dict[str, Any]:
             "j_per_token_sd": var ** 0.5,
             "mean_duration_s": sum(rep["duration_s"]) / n,
             "s_per_token_bench": rep["s_per_token"],
+            "min_rep_samples": min(rep["samples"]),
+            "mean_coverage": sum(rep["covered"]) / n,
             "flags": rep["flags"],
             "macs_per_token": workload["macs"],
             "bytes_per_token": workload["bytes"],
