@@ -1,0 +1,73 @@
+% armflex core paper for IEEE SoutheastCon.
+% Structure mirrors OUTLINE.md in this directory; the outline is the
+% source of truth until sections are drafted.
+% TODO: confirm page limit and review model from the SoutheastCon 2027
+% CFP when it posts. Every number in this paper must trace to a logged
+% experiment (wattwarden EXP-001..005, EXP-003b; armflex EXP-101+).
+
+\documentclass[conference]{IEEEtran}
+
+\usepackage[utf8]{inputenc}
+\usepackage[T1]{fontenc}
+\usepackage{graphicx}
+\usepackage{booktabs}
+\usepackage{url}
+
+\begin{document}
+
+\title{armflex: The TOML Operation-Level Energy Model for LLM Inference
+Across the Arm Silicon Ladder}
+
+% TODO: affiliation and author list to confirm before submission.
+\author{\IEEEauthorblockN{Muntaser Syed}
+\IEEEauthorblockA{Affiliation TBD\\
+Melbourne, Florida, USA\\
+jemsbhai@gmail.com}}
+
+\maketitle
+
+\begin{abstract}
+% Draft after Sections 3 to 5 stabilize. One paragraph: the model, the
+% package, the ladder, the headline calibrated law, the deployment
+% down to MicroPython.
+TODO
+\end{abstract}
+
+\begin{IEEEkeywords}
+LLM inference, energy modeling, Arm, quantization, edge computing
+\end{IEEEkeywords}
+
+\section{Introduction}
+% OUTLINE.md section 1. Contributions list with evidence status.
+TODO
+
+\section{Background and Related Work}
+% OUTLINE.md section 2. TOML lineage \cite{syed2026toml}; llama.cpp
+% \cite{llamacpp}; KleidiAI measured not assumed.
+TODO
+
+\section{The Model}
+% OUTLINE.md section 3. Include the untied-output-head correction.
+TODO
+
+\section{The armflex Package}
+% OUTLINE.md section 4. \cite{armflex}
+TODO
+
+\section{Calibration Across the Ladder}
+% OUTLINE.md section 5. V2 done; G3 pending EXP-003b; A53 and M7
+% planned as EXP-101 onward. No pending or planned numbers stated as
+% results.
+TODO
+
+\section{Limitations}
+% OUTLINE.md section 6. The unexplained t16 collapse is disclosed.
+TODO
+
+\section{Conclusion}
+TODO
+
+\bibliographystyle{IEEEtran}
+\bibliography{references}
+
+\end{document}

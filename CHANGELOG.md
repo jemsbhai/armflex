@@ -8,6 +8,13 @@ versioning.
 
 ### Added
 
+- Paper skeletons under papers/: southeastcon-core (IEEEtran) and
+  flairs40-full (provisional article class pending the FLAIRS-40
+  author kit). Each has main.tex, a seed references.bib with no
+  fabricated entries (stubs are marked TODO), and an OUTLINE.md
+  drafted from the wattwarden findings with per-claim evidence
+  status (done, pending, planned, open) and an explicit
+  dual-submission scope boundary.
 - phone_energy extracted from wattwarden: the EXP-003b battery
   telemetry analyzer with locked unit rules, trapezoid integration,
   baseline netting, protocol-violation flags, the two- and
