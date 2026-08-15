@@ -1,0 +1,46 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.venv/
+venv/
+test_env/
+.pytest_cache/
+.coverage
+htmlcov/
+.ruff_cache/
+
+# Secrets and local config
+.env
+.env.local
+*.key
+*.pem
+*secrets*
+
+# Models and large artifacts (never commit weights)
+models/
+*.gguf
+
+# Experiment outputs (results and configs are committed selectively by hand)
+experiments/*/checkpoints/
+experiments/*/logs/
+experiments/*/raw/
+runs/
+
+# LaTeX build artifacts (compiled figures and final PDFs are handled by hand)
+papers/**/*.aux
+papers/**/*.log
+papers/**/*.out
+papers/**/*.bbl
+papers/**/*.blg
+papers/**/*.synctex.gz
+papers/**/*.fls
+papers/**/*.fdb_latexmk
+
+# Editors and OS
+.idea/
+.vscode/
+.DS_Store
+Thumbs.db
