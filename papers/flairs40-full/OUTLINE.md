@@ -64,8 +64,9 @@ logbook; [open] = scope decision pending user decree.
 
 - One subsection, citation-forward: V2 time law A + B/t; KleidiAI
   decode refutation; ~150 GB/s as observed maximum; G3 energy
-  anchoring [pending, EXP-003b]; Pi 5 (A76), A53, and M7 legs
-  [planned].
+  anchoring: first calibrated profile (84.6 pJ/MAC, 88.3 pJ/byte),
+  and fastest is not cheapest on big.LITTLE [done, EXP-003b]; Pi 5
+  (A76), A53, and M7 legs [planned].
 - The t16 serving collapse disclosed as unexplained with its bounds
   [done, EXP-004/005].
 
