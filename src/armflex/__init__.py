@@ -1,8 +1,8 @@
 """armflex: operation-level energy modeling for LLM inference on Arm and
 edge devices.
 
-The core is dependency-free. Modules arrive by extraction from
-wattwarden: toml_model and calibrate (landed), phone_energy (pending).
+The core is dependency-free. Extracted from wattwarden: toml_model,
+calibrate, and phone_energy.
 """
 
 from armflex.toml_model import (

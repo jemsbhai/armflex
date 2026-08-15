@@ -8,6 +8,12 @@ versioning.
 
 ### Added
 
+- phone_energy extracted from wattwarden: the EXP-003b battery
+  telemetry analyzer with locked unit rules, trapezoid integration,
+  baseline netting, protocol-violation flags, the two- and
+  three-parameter energy-constant fits, and the append-only output
+  guard. Nine tests migrated with it. This completes the planned
+  extraction; the core remains dependency-free.
 - calibrate extracted from wattwarden: closed-form least squares
   (linfit), the per-thread and per-quant decode time-structure fits
   from EXP-003a, sweep loading, markdown rendering, and the
